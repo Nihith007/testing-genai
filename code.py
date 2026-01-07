@@ -1,33 +1,33 @@
 import streamlit as st
 from google import genai
 
+st.set_page_config(page_title="Gemini Streamlit App")
+
+st.title("🤖 Gemini Streamlit App")
+
 try:
-    # Create Gemini client (Streamlit secrets auto-load as env vars)
-    client = genai.Client()
-    st.write("✅ Gemini API client configured.")
+    # Read API key from Streamlit secrets
+    api_key = st.secrets["GEMINI_API_KEY"]
 
-    prompt = "Benefits of API key management?"
+    # Create Gemini client
+    client = genai.Client(api_key=api_key)
+    st.success("✅ Gemini API client configured")
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt
+    # User input box (THIS replaces input())
+    prompt = st.text_input(
+        "Ask Gemini something:",
+        "Benefits of API key management"
     )
 
-    st.write(f"Response: {response.text}")
+    if prompt:
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
+        st.write("### Gemini says:")
+        st.write(response.text)
 
+except KeyError:
+    st.error("❌ GEMINI_API_KEY not found in Streamlit secrets.")
 except Exception as e:
-    st.error(f"❌ Error: {e}. Check your 'GEMINI_API_KEY' in secrets.")
-   
-API_KEY = "AIzaSyB1eTCDDXH5O4iru21pxwmWtWspSUUlMyQ"
-client = genai.Client(api_key=API_KEY)
-chat = client.chats.create(model="gemini-2.5-flash")
-print("Gemini Chat (type 'exit' to stop)\n")
-while True:
-    user_input = input("You: ")
-
-    if user_input.lower() == "exit":
-        print("Chat ended.")
-        break
-
-    response = chat.send_message(user_input)
-    print("Gemini:", response.text)
+    st.error(f"❌ Error: {e}")
