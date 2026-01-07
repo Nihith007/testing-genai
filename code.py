@@ -1,34 +1,38 @@
 import streamlit as st
 from google import genai
 
-# Set page title
-st.set_page_config(page_title="Gemini Streamlit App")
-st.title("🤖 Gemini Chat App")
+st.set_page_config(page_title="Gemini Chat")
+st.title("Gemini Chat")
 
-try:
-    # Get API key from Streamlit secrets
-    api_key = st.secrets["GEMINI_API_KEY"]
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
-    # Create Gemini client
-    client = genai.Client(api_key=api_key)
-    st.success("✅ Gemini API client configured")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    # Text input for user prompts
-    prompt = st.text_input(
-        "Ask Gemini something:",
-        "Type your question here..."
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+user_input = st.chat_input("Type a message")
+
+if user_input:
+    st.session_state.messages.append(
+        {"role": "user", "content": user_input}
     )
 
-    if prompt:
-        # Generate response from Gemini
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
-        st.markdown("### Gemini says:")
-        st.write(response.text)
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-except KeyError:
-    st.error("❌ GEMINI_API_KEY not found in Streamlit secrets.")
-except Exception as e:
-    st.error(f"❌ Error: {e}")
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=user_input
+    )
+
+    reply = response.text.strip()
+
+    st.session_state.messages.append(
+        {"role": "assistant", "content": reply}
+    )
+
+    with st.chat_message("assistant"):
+        st.markdown(reply)
